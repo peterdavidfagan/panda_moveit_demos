@@ -18,14 +18,13 @@
 
 import os
 import yaml
-from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import ExecuteProcess
 from ament_index_python.packages import get_package_share_directory
 from moveit_configs_utils import MoveItConfigsBuilder
 
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription,Shutdown)
-
 
 def load_yaml(package_name, file_path):
     package_path = get_package_share_directory(package_name)
@@ -39,28 +38,29 @@ def load_yaml(package_name, file_path):
 
 
 def generate_launch_description():
+    robot_ip = LaunchConfiguration("robot_ip")
+    hand = LaunchConfiguration("hand")
+
+    robot_ip_arg = DeclareLaunchArgument(
+        "robot_ip",
+        default_value="192.168.106.39",
+        description="Robot IP address.",
+    )
+
+    hand_arg = DeclareLaunchArgument(
+        "hand",
+        default_value="true",
+        description="Whether to use the hand.",
+    )
 
     moveit_config = (
-            MoveItConfigsBuilder(robot_name="franka", package_name="franka_moveit_config")
-            .planning_pipelines("ompl", ["ompl", "chomp", "pilz_industrial_motion_planner"])
+            MoveItConfigsBuilder(robot_name="franka_panda", package_name="moveit_resources_franka_panda_moveit_config")
+            .robot_description(file_path=get_package_share_directory("moveit_resources_franka_panda_description") + "/urdf/panda_arm.urdf.xacro", 
+                mappings={"robot_ip": robot_ip, "hand": hand})
+            .robot_description_semantic("config/franka_panda.srdf")
             .trajectory_execution("config/moveit_controllers.yaml")
-            .robot_description_semantic("config/franka.srdf")
-            .robot_description("config/franka.urdf")
-            .moveit_cpp("config/notebook.yaml")
             .to_moveit_configs()
             )
-
-
-
-    # Start the actual move_group node/action server
-    #run_move_group_node = Node(
-    #    package='moveit_ros_move_group',
-    #    executable='move_group',
-    #    output='screen',
-    #    parameters=[
-    #        moveit_config.to_dict()
-    #    ],
-    #)
 
     # RViz
     #rviz_base = os.path.join(get_package_share_directory('franka_moveit_config'), 'rviz')
@@ -107,7 +107,7 @@ def generate_launch_description():
     )
 
     ros2_controllers_path = os.path.join(
-        get_package_share_directory('franka_moveit_config'),
+        get_package_share_directory('moveit_resources_franka_panda_moveit_config'),
         'config',
         'ros2_controllers.yaml',
     )
@@ -139,6 +139,8 @@ def generate_launch_description():
     start_notebook = ExecuteProcess(cmd = ["cd {} && python3 -m notebook --allow-root".format(notebook_dir)], shell = True, output = "screen")
     return LaunchDescription(
         [
+         robot_ip_arg,
+         hand_arg,
          start_notebook,
          rviz_node,
          static_tf,
