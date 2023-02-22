@@ -3,7 +3,6 @@ project(panda_moveit_demos)
 
 find_package(ament_cmake REQUIRED)
 
-add_subdirectory(motion_planning_scripts)
 add_subdirectory(notebook_demos)
 
 ament_package()
