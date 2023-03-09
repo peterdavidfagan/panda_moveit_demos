@@ -41,10 +41,11 @@ def generate_launch_description():
         default_value="false",
         description="Whether to use servo.",
     )
-
+    
+    
     moveit_config = (
             MoveItConfigsBuilder(robot_name="franka_panda", package_name="moveit_resources_franka_panda_moveit_config")
-            .robot_description(file_path=get_package_share_directory("moveit_resources_franka_panda_description") + "/urdf/panda_arm.urdf.xacro", 
+            .robot_description(file_path=get_package_share_directory("moveit_resources_franka_panda_description") + "/urdf/panda_arm_hand.urdf.xacro", 
                 mappings={"robot_ip": robot_ip, "hand": hand})
             .robot_description_semantic("config/franka_panda.srdf")
             .trajectory_execution("config/moveit_controllers.yaml")
@@ -111,9 +112,20 @@ def generate_launch_description():
         on_exit=Shutdown(),
     )
 
+    # Gripper Action Server
+    gripper_config = os.path.join(get_package_share_directory('franka_gripper'), 'config',
+                                  'franka_gripper_node.yaml')
+
+    gripper = Node(
+        package="franka_gripper",
+        executable="franka_gripper_node",
+        name=['panda_gripper'],
+        parameters=[{'robot_ip': robot_ip, 'joint_names': ['panda_finger_joint1','panda_finger_joint2']}, gripper_config],
+            )
+    
     # Load controllers
     load_controllers = []
-    for controller in ['panda_arm_controller', 'joint_state_broadcaster']:
+    for controller in ['panda_arm_controller', 'panda_gripper', 'joint_state_broadcaster']:
         load_controllers += [
             ExecuteProcess(
                 cmd=['ros2 run controller_manager spawner {}'.format(controller)],
@@ -153,6 +165,7 @@ def generate_launch_description():
             robot_ip_arg,
             hand_arg,
             servo_arg,
+            gripper,
             start_notebook,
             rviz_node,
             static_tf,
@@ -170,6 +183,7 @@ def generate_launch_description():
             robot_ip_arg,
             hand_arg,
             servo_arg,
+            gripper,
             start_notebook,
             rviz_node,
             static_tf,
