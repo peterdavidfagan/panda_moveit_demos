@@ -45,7 +45,7 @@ def generate_launch_description():
     
     moveit_config = (
             MoveItConfigsBuilder(robot_name="franka_panda", package_name="moveit_resources_franka_panda_moveit_config")
-            .robot_description(file_path=get_package_share_directory("moveit_resources_franka_panda_description") + "/urdf/panda_arm_hand.urdf.xacro", 
+            .robot_description(file_path=get_package_share_directory("moveit_resources_franka_panda_description") + "/urdf/panda_arm.urdf.xacro", 
                 mappings={"robot_ip": robot_ip, "hand": hand})
             .robot_description_semantic("config/franka_panda.srdf")
             .trajectory_execution("config/moveit_controllers.yaml")
